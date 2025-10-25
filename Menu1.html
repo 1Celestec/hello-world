@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Libra Health - Smoothie Menu</title>
+    <!-- Tailwind CSS for styling --><script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for data visualization --><script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts --><link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --c-red: #ffadad;
+            --c-orange: #ffd6a5;
+            --c-yellow: #fdffb6;
+            --c-green: #caffbf;
+            --c-blue: #9bf6ff;
+            --c-purple: #bdb2ff;
+            --c-pink: #ffc6ff;
+            --c-bg: #F5F5F5;
+            --c-text: #1a1a1a;
+            --c-border: #1a1a1a;
+        }
+
+        body {
+            font-family: 'Space Mono', monospace;
+            /* background-color: var(--c-bg); */
+            color: var(--c-text);
+            overflow-x: hidden;
+            background: linear-gradient(-45deg, 
+                var(--c-red), 
+                var(--c-orange), 
+                var(--c-yellow), 
+                var(--c-green), 
+                var(--c-blue), 
+                var(--c-purple), 
+                var(--c-pink)
+            );
+            background-size: 400% 400%;
+            animation: bg-pan 25s ease infinite;
+        }
+
+        h1, h2, h3, p, span, div {
+             font-family: 'Space Mono', monospace;
+        }
+
+        /* Kinetic Typography */
+        .kinetic-title span {
+            display: inline-block;
+            animation: kinetic-jiggle 1.5s infinite;
+            animation-delay: calc(0.1s * var(--i));
+        }
+
+        @keyframes kinetic-jiggle {
+            0%, 100% { transform: translateY(0) rotate(0); }
+            25% { transform: translateY(-3px) rotate(-1deg); }
+            75% { transform: translateY(2px) rotate(2deg); }
+        }
+
+        @keyframes bg-pan {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .brutalist-border {
+            border: 3px solid var(--c-border);
+            box-shadow: 5px 5px 0px var(--c-border);
+        }
+        
+        .brutalist-border-small {
+             border: 2px solid var(--c-border);
+        }
+        
+        .menu-item.active {
+             transform: translate(3px, 3px);
+             box-shadow: 2px 2px 0px var(--c-border);
+        }
+
+    </style>
+</head>
+<body class="p-4 md:p-6">
+
+    <div class="relative min-h-screen">
+        <header class="absolute top-0 left-0 w-full p-4">
+            <h1 class="kinetic-title text-4xl md:text-6xl font-bold uppercase" style="color: var(--c-text);">Libra Health</h1>
+        </header>
+
+        <main class="grid grid-cols-12 gap-4 pt-24">
+            
+            <div id="menu-container" class="col-span-12 md:col-span-5 lg:col-span-4 space-y-4 z-10">
+                <!-- Menu items injected here -->
+            </div>
+
+            <div class="col-span-12 md:col-span-7 lg:col-span-8 flex justify-center items-start">
+                 <div id="details-container" class="sticky top-8 w-full max-w-2xl bg-white p-6 transition-opacity duration-300 opacity-0 brutalist-border">
+                    <div class="flex flex-col md:flex-row gap-6 items-start">
+                         <div class="w-24 h-24 rounded-none flex-shrink-0" id="details-color-box"></div>
+                         <div class="flex-grow">
+                             <div class="flex justify-between items-start">
+                                <h2 id="details-name" class="text-4xl font-bold uppercase"></h2>
+                                <p id="details-price" class="text-2xl font-bold"></p>
+                             </div>
+                            <p id="details-description" class="mt-2 mb-4 text-sm"></p>
+                         </div>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <h3 class="font-bold text-2xl mb-3 uppercase">Ingredients</h3>
+                        <div id="details-ingredients" class="flex flex-wrap gap-3">
+                        </div>
+                    </div>
+
+                    <div class="mt-8">
+                        <h3 class="font-bold text-2xl mb-4 uppercase">Nutrition</h3>
+                        <div class="relative h-56 md:h-64">
+                            <canvas id="nutritionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const kineticTitle = document.querySelector('.kinetic-title');
+            const text = kineticTitle.textContent;
+            kineticTitle.innerHTML = text.split('').map((char, i) => `<span style="--i:${i}">${char === ' ' ? '&nbsp;' : char}</span>`).join('');
+            
+            // Neo-brutalist baby rainbow palettes
+            const smoothies = [
+                {
+                    id: 0,
+                    name: "Equilibrium",
+                    price: 6.99,
+                    description: "A powerhouse of protein and healthy fats to fuel your day. Perfect for a post-workout recovery or a filling meal replacement.",
+                    ingredients: ["Avocado", "Almond Milk", "Spinach", "Hemp Seeds", "Chia Seeds", "MCT Oil", "Whey Isolate"],
+                    nutrition: { "Calories": 450, "Protein": 30, "Carbs": 15, "Fat": 30 },
+                    bgColor: 'bg-[var(--c-green)]',
+                    activeColor: 'var(--c-green)',
+                    chartColor: 'rgba(202, 255, 191, 1)',
+                    borderColor: 'var(--c-text)',
+                },
+                {
+                    id: 1,
+                    name: "Harmony",
+                    price: 6.99,
+                    description: "A delicious and antioxidant-rich blend of berries and creamy coconut. A sweet treat that's actually good for you.",
+                    ingredients: ["Coconut Milk", "Mixed Berries", "Almond Butter", "Vanilla Protein", "Cacao Nibs"],
+                    nutrition: { "Calories": 550, "Protein": 25, "Carbs": 35, "Fat": 35 },
+                    bgColor: 'bg-[var(--c-pink)]',
+                    activeColor: 'var(--c-pink)',
+                    chartColor: 'rgba(255, 198, 255, 1)',
+                    borderColor: 'var(--c-text)',
+                },
+                {
+                    id: 2,
+                    name: "Clarity",
+                    price: 4.99 ,
+                    description: "A light, refreshing, and cleansing green smoothie to help you reset and feel your best. Packed with vitamins and minerals.",
+                    ingredients: ["Avocado", "Spinach", "Cucumber", "Lemon Juice"],
+                    nutrition: { "Calories": 250, "Protein": 5, "Carbs": 20, "Fat": 18 },
+                    bgColor: 'bg-[var(--c-blue)]',
+                    activeColor: 'var(--c-blue)',
+                    chartColor: 'rgba(155, 246, 255, 1)',
+                    borderColor: 'var(--c-text)',
+                }
+            ];
+
+            const menuContainer = document.getElementById('menu-container');
+            const detailsContainer = document.getElementById('details-container');
+            const detailsColorBox = document.getElementById('details-color-box');
+            const detailsName = document.getElementById('details-name');
+            const detailsPrice = document.getElementById('details-price');
+            const detailsDescription = document.getElementById('details-description');
+            const detailsIngredients = document.getElementById('details-ingredients');
+            
+            let nutritionChart;
+
+            function renderMenu() {
+                smoothies.forEach(smoothie => {
+                    const menuItem = document.createElement('div');
+                    menuItem.className = `menu-item p-4 cursor-pointer bg-white brutalist-border transition-all duration-200`;
+                    menuItem.dataset.id = smoothie.id;
+                    
+                    menuItem.innerHTML = `
+                        <h3 class="font-bold text-2xl uppercase">${smoothie.name}</h3>
+                        <p class="text-sm mt-1">Click to see details</p>
+                    `;
+                    
+                    menuItem.addEventListener('click', () => {
+                        selectSmoothie(smoothie.id);
+                    });
+                    
+                    menuContainer.appendChild(menuItem);
+                });
+            }
+
+            function selectSmoothie(id) {
+                const selectedSmoothie = smoothies.find(s => s.id === id);
+
+                document.querySelectorAll('.menu-item').forEach(item => {
+                    item.classList.remove('active');
+                    item.style.backgroundColor = 'white';
+                    if (parseInt(item.dataset.id) === id) {
+                        item.classList.add('active');
+                        item.style.backgroundColor = selectedSmoothie.activeColor;
+                    }
+                });
+
+                updateDetails(selectedSmoothie);
+                updateChart(selectedSmoothie);
+            }
+
+            function updateDetails(smoothie) {
+                detailsContainer.style.opacity = 0;
+                
+                setTimeout(() => {
+                    detailsName.textContent = smoothie.name;
+                    detailsPrice.textContent = `$${smoothie.price.toFixed(2)}`;
+                    detailsDescription.textContent = smoothie.description;
+                    detailsColorBox.className = `w-24 h-24 rounded-none flex-shrink-0 ${smoothie.bgColor} brutalist-border-small`;
+
+                    const ingredientSymbols = {
+                        "Avocado": "🥑", "Almond Milk": "🥛", "Spinach": "🥬", "Hemp Seeds": "🌱", "Chia Seeds": "⚫", "MCT Oil": "💧", "Whey Isolate": "💪", "Coconut Milk": "🥥", "Mixed Berries": "🍓", "Almond Butter": "🥜", "Vanilla Protein": "🍦", "Cacao Nibs": "🍫", "Cucumber": "🥒", "Lemon Juice": "🍋"
+                    };
+
+                    detailsIngredients.innerHTML = '';
+                    smoothie.ingredients.forEach(ingredient => {
+                        const tag = document.createElement('span');
+                        tag.className = 'bg-white text-black h-12 w-12 flex items-center justify-center text-2xl brutalist-border-small';
+                        tag.textContent = ingredientSymbols[ingredient] || '❓';
+                        tag.title = ingredient;
+                        detailsIngredients.appendChild(tag);
+                    });
+                    
+                    detailsContainer.style.opacity = 1;
+                }, 150);
+            }
+
+            function updateChart(smoothie) {
+                const ctx = document.getElementById('nutritionChart').getContext('2d');
+                
+                if (nutritionChart) {
+                    nutritionChart.destroy();
+                }
+
+                nutritionChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: Object.keys(smoothie.nutrition),
+                        datasets: [{
+                            label: 'Value',
+                            data: Object.values(smoothie.nutrition),
+                            backgroundColor: smoothie.chartColor,
+                            borderColor: smoothie.borderColor,
+                            borderWidth: 2,
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                grid: { color: 'rgba(0, 0, 0, 0.1)' },
+                                ticks: {
+                                    color: 'var(--c-text)',
+                                    font: { weight: '700', family: "'Space Mono', monospace" }
+                                }
+                            },
+                            y: {
+                                grid: { display: false },
+                                ticks: {
+                                    color: 'var(--c-text)',
+                                    font: {
+                                        size: 14,
+                                        weight: '700',
+                                        family: "'Space Mono', monospace"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            renderMenu();
+            selectSmoothie(0);
+        });
+    </script>
+
+</body>
+</html>
+
+
+
+
